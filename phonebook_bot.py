@@ -2,11 +2,11 @@ import telebot
 from telebot import types
 from config import token, FILE, commands
 import json
-import random
 
 
 phonebook = {}
 adding_new_contact = {}
+change_data = []
 bot = telebot.TeleBot(token)
 with open(FILE, "r", encoding="utf-8") as f:
     phonebook = json.load(f)
@@ -53,7 +53,6 @@ def save_contact_data(chat_id): # Save the new contact in phonebook
         "place": contact_data["place"].lower()
     }
 
-
 # save list of contacts in json file
 @bot.message_handler(commands=["save"])
 def save_contact(message):
@@ -83,29 +82,115 @@ Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""")
     except:
         bot.send_message(message.chat.id, "This contact was not found")
-    
+
+# delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
 def get_del_contact(message):
     bot.send_message(message.chat.id, "Enter the name of the contact you want to delete")
-    bot.register_next_step_handler(message, delete_contact)
+    bot.register_next_step_handler(message, choose_data)
 
-def delete_contact(message):
-    contact = message.text.lower()
-    del phonebook[contact]
-    bot.send_message(message.chat.id, "The contact deleted")
+def choose_data(message):
+    change_data.append(message.text.lower())
+
+    button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    contact_button = types.KeyboardButton("Contact")
+    phone_button = types.KeyboardButton("Phone")
+    button.add(contact_button, phone_button)
+
+    bot.send_message(message.chat.id, "What do you want to delete?", reply_markup=button)
+    bot.register_next_step_handler(message, execute_change)
+
+def execute_change(message):
+    chosen_option = message.text.lower()
+
+    if chosen_option == "contact":
+        del phonebook[change_data.pop()]
+        bot.send_message(message.chat.id, "The contact deleted")
+        save_contact(message)
+
+    elif chosen_option == "phone":
+        button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        for i in range(len(phonebook[change_data[0]]["phones"])):
+            button.add(f"{phonebook[change_data[0]]['phones'][i]}") 
+
+        bot.send_message(message.chat.id, "Which number do you want to delete?", reply_markup=button)
+        bot.register_next_step_handler(message, delete_phone)
+
+    else:
+        bot.send_message(message.chat.id, "Invalid option.") 
+
+def delete_phone(message):
+    chosen_phone = message.text
+    phonebook[change_data.pop()]["phones"].remove(chosen_phone)
+    bot.send_message(message.chat.id, "The number of phone deleted")
     save_contact(message)
 
-# Bot menu
+# change data
+@bot.message_handler(commands=["change"])
+def choose_contact(message):
+    bot.send_message(message.chat.id, "Enter the name of contact you want to change")
+    bot.register_next_step_handler(message, choose_operation)
+
+def choose_operation(message):
+    change_data.append(message.text.lower()) # contact name
+    
+    button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    name_button = types.KeyboardButton("Name")
+    phone_button = types.KeyboardButton("Phone")
+    place_button = types.KeyboardButton("Place")
+    button.add(name_button, phone_button, place_button)
+
+    bot.send_message(message.chat.id, "What do you want to change?", reply_markup=button)
+    bot.register_next_step_handler(message, perform_change)
+
+def perform_change(message):
+    chosen_option = message.text.lower()
+
+    if chosen_option == "name":
+        bot.send_message(message.chat.id, "Enter the new name of contact")
+        bot.register_next_step_handler(message, replace_name)
+    elif chosen_option == "phone":
+        bot.send_message(message.chat.id, "Enter the new number of contact")
+        bot.register_next_step_handler(message, replace_phone)
+    elif chosen_option == "place":
+        bot.send_message(message.chat.id, "Enter the new place of contact")
+        bot.register_next_step_handler(message, replace_place)
+    else:
+        bot.send_message(message.chat.id, "Invalid option. Please choose 'Name', 'Phone', or 'Place'.")
+
+def replace_name(message):
+    contact = message.text.lower() # new contact name
+    phonebook[contact] = phonebook.pop(change_data.pop())
+    save_contact(message)
+
+def replace_phone(message):
+    contact = message.text # new contact phone number
+    phonebook[change_data.pop()]["phones"] += [contact]
+    save_contact(message)
+
+def replace_place(message):
+    contact = message.text
+    phonebook[change_data.pop()]["place"] = contact
+    save_contact(message)
+
+# bot menu
 @bot.message_handler(content_types=["text"]) 
 def greetings(message): 
     if message.text == '/menu':
+
         button = types.InlineKeyboardMarkup()
         button.add(types.InlineKeyboardButton("Look all my contacts", callback_data="/all"))
         button.add(types.InlineKeyboardButton("Look single contact", callback_data="/look"))
-        button.add(types.InlineKeyboardButton("Add a new contact", callback_data="/add"))
-        button.add(types.InlineKeyboardButton("Save the new contacts", callback_data="/save"))
+        button.add(types.InlineKeyboardButton("Add", callback_data="/add"))
+        button.add(types.InlineKeyboardButton("Save", callback_data="/save"))
+        button.add(types.InlineKeyboardButton("Delete", callback_data="/delete"))
+        button.add(types.InlineKeyboardButton("Change", callback_data="/change"))
+
         bot.send_message(message.chat.id, """Hello there! I'm Bilsina's phonebook.
 You can looked, found, saved and changed data here.
+                         
+You can output all list of your contacts by:
+                /all
                          
 If you want to add a new contact, you have to send a message:
                 /add
@@ -115,10 +200,16 @@ If you want to look single contact, you have to send message:
                          
 For save your new contacts, you have to send message:
                 /save
+            
+For delete contact, you have to send message:
+                /delete
+                         
+For changed data, you have to send message:
+                /change
                          
 Or you can use the buttons below.""", reply_markup=button)
 
-# Call options
+# call options
 @bot.callback_query_handler(func = lambda callback: True)
 def callback_all(callback):
     if callback.data == "/all":
@@ -129,6 +220,10 @@ def callback_all(callback):
         get_name(callback.message)
     elif callback.data == "/save":
         save_contact(callback.message)
+    elif callback.data == "/delete":
+        get_del_contact(callback.message)
+    elif callback.data == "/change":
+        choose_contact(callback.message)
         
 # t.me/bils1n_phonebook_bot 
 bot.polling()
