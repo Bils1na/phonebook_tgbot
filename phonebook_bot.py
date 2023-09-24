@@ -36,7 +36,7 @@ def add_contact_name(message):
     bot.register_next_step_handler(message, add_contact_phone)
 
 def add_contact_phone(message):
-    adding_new_contact[message.chat.id]["phones"] = message.text.split()
+    adding_new_contact[message.chat.id]["phones"] = list(message.text.split())
     bot.send_message(message.chat.id, "Enter the name of place")
     bot.register_next_step_handler(message, add_contact_city)
 
@@ -64,16 +64,36 @@ def save_contact(message):
 # look contact by name
 @bot.message_handler(commands=["look"])
 def get_name(message):
-    bot.send_message(message.chat.id, "Enter the name of contact you want to find")
+    bot.send_message(message.chat.id, "Enter the number or the name of contact you want to find")
     bot.register_next_step_handler(message, look_contact)
 
 def look_contact(message):
+    contact = message.text.lower()
     try:
-        name = message.text.lower()
-        bot.send_message(message.chat.id,f"""Phones: {phonebook[name]["phones"]}
+        if contact.isalpha():
+            bot.send_message(message.chat.id,f"""Name: {contact.title()}
+Phones: {phonebook[contact]["phones"]}
+Place: {phonebook[contact]["place"].title()}""")
+        else:
+            for name, v in phonebook.items():
+                for v1 in v["phones"]:
+                    if v1 == contact:
+                        bot.send_message(message.chat.id, f"""Name: {name.title()}
+Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""")
     except:
         bot.send_message(message.chat.id, "This contact was not found")
+    
+@bot.message_handler(commands=["delete"])
+def get_del_contact(message):
+    bot.send_message(message.chat.id, "Enter the name of the contact you want to delete")
+    bot.register_next_step_handler(message, delete_contact)
+
+def delete_contact(message):
+    contact = message.text.lower()
+    del phonebook[contact]
+    bot.send_message(message.chat.id, "The contact deleted")
+    save_contact(message)
 
 # Bot menu
 @bot.message_handler(content_types=["text"]) 
@@ -81,6 +101,9 @@ def greetings(message):
     if message.text == '/menu':
         button = types.InlineKeyboardMarkup()
         button.add(types.InlineKeyboardButton("Look all my contacts", callback_data="/all"))
+        button.add(types.InlineKeyboardButton("Look single contact", callback_data="/look"))
+        button.add(types.InlineKeyboardButton("Add a new contact", callback_data="/add"))
+        button.add(types.InlineKeyboardButton("Save the new contacts", callback_data="/save"))
         bot.send_message(message.chat.id, """Hello there! I'm Bilsina's phonebook.
 You can looked, found, saved and changed data here.
                          
@@ -91,12 +114,21 @@ If you want to look single contact, you have to send message:
                 /look
                          
 For save your new contacts, you have to send message:
-                /save""", reply_markup=button)
+                /save
+                         
+Or you can use the buttons below.""", reply_markup=button)
 
-# Call the list of the contacts
+# Call options
 @bot.callback_query_handler(func = lambda callback: True)
 def callback_all(callback):
-    get_all(callback.message)
+    if callback.data == "/all":
+        get_all(callback.message)
+    elif callback.data == "/add":
+        add_new_contact(callback.message)
+    elif callback.data == "/look":
+        get_name(callback.message)
+    elif callback.data == "/save":
+        save_contact(callback.message)
         
 # t.me/bils1n_phonebook_bot 
 bot.polling()
