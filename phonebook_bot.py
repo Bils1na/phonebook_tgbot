@@ -38,9 +38,9 @@ def add_contact_name(message):
 def add_contact_phone(message):
     adding_new_contact[message.chat.id]["phones"] = list(message.text.split())
     bot.send_message(message.chat.id, "Enter the name of place")
-    bot.register_next_step_handler(message, add_contact_city)
+    bot.register_next_step_handler(message, add_contact_place)
 
-def add_contact_city(message):
+def add_contact_place(message):
     adding_new_contact[message.chat.id]["place"] = message.text
     save_contact_data(message.chat.id)
     bot.send_message(message.chat.id, "The new contact successfully added")
@@ -86,7 +86,7 @@ Place: {phonebook[name]["place"].title()}""")
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
 def get_del_contact(message):
-    bot.send_message(message.chat.id, "Enter the name of the contact you want to delete")
+    bot.send_message(message.chat.id, "Enter the name of the contact")
     bot.register_next_step_handler(message, choose_data)
 
 def choose_data(message):
