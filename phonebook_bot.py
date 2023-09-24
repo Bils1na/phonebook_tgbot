@@ -99,30 +99,14 @@ Place: {phonebook[contact]["place"].title()}""")
 
 def look_phone(message):
     contact = message.text.lower()
-    
+
     for name, v in phonebook.items():
         for v1 in v["phones"]:
             if v1 == contact:
-                bot.send_message(message.chat.id, f"""Name: {name.title()}
+                bot.send_message(message.chat.id, f"""Name: **{name.title()}**
 Phones: {phonebook[name]["phones"]}
-Place: {phonebook[name]["place"].title()}""")
+Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
     
-#     try:
-#         if contact.isalpha():
-#             bot.send_message(message.chat.id,f"""Name: {contact.title()}
-# Phones: {phonebook[contact]["phones"]}
-# Place: {phonebook[contact]["place"].title()}""")
-#         else:
-#             for name, v in phonebook.items():
-#                 for v1 in v["phones"]:
-#                     if v1 == contact:
-#                         bot.send_message(message.chat.id, f"""Name: {name.title()}
-# Phones: {phonebook[name]["phones"]}
-# Place: {phonebook[name]["place"].title()}""")
-#     except:
-#         bot.send_message(message.chat.id, "This contact was not found")
-
-
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
 def get_del_contact(message):
