@@ -60,7 +60,7 @@ def save_contact(message):
         f.write(json.dumps(phonebook, ensure_ascii=False))
     bot.send_message(message.chat.id, "Data has saved")
 
-# look contact by name
+# look contact by name or number
 @bot.message_handler(commands=["look"])
 def get_name(message):
     button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -93,9 +93,9 @@ def look_option(message):
 def look_contact(message):
     contact = message.text.lower()
 
-    bot.send_message(message.chat.id,f"""Name: {contact.title()}
+    bot.send_message(message.chat.id,f"""Name: *{contact.title()}*
 Phones: {phonebook[contact]["phones"]}
-Place: {phonebook[contact]["place"].title()}""")
+Place: {phonebook[contact]["place"].title()}""", parse_mode="Markdown")
 
 def look_phone(message):
     contact = message.text.lower()
@@ -103,7 +103,7 @@ def look_phone(message):
     for name, v in phonebook.items():
         for v1 in v["phones"]:
             if v1 == contact:
-                bot.send_message(message.chat.id, f"""Name: **{name.title()}**
+                bot.send_message(message.chat.id, f"""Name: *{name.title()}*
 Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
     
