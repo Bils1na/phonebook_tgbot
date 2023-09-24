@@ -63,30 +63,74 @@ def save_contact(message):
 # look contact by name
 @bot.message_handler(commands=["look"])
 def get_name(message):
-    bot.send_message(message.chat.id, "Enter the number or the name of contact you want to find")
-    bot.register_next_step_handler(message, look_contact)
+    button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    name_button = types.KeyboardButton("Names")
+    phone_button = types.KeyboardButton("Phones")
+    button.add(name_button, phone_button)
+
+    bot.send_message(message.chat.id, "Which do you want to choose by names or by phone numbers?", reply_markup=button)
+    bot.register_next_step_handler(message, look_option)
+
+def look_option(message):
+    chosen_option = message.text.lower()
+
+    if chosen_option == "names":
+        button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        for k, _ in phonebook.items():
+            button.add(f"{k.title()}")
+
+        bot.send_message(message.chat.id, "Which contact do you want to choose?", reply_markup=button)
+        bot.register_next_step_handler(message, look_contact)
+    elif chosen_option == "phones":
+        button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        for _, v in phonebook.items():
+            for phone in v["phones"]:
+                button.add(f"{phone}")
+
+        bot.send_message(message.chat.id, "Which number do you want to choose?", reply_markup=button)
+        bot.register_next_step_handler(message, look_phone)
 
 def look_contact(message):
     contact = message.text.lower()
-    try:
-        if contact.isalpha():
-            bot.send_message(message.chat.id,f"""Name: {contact.title()}
+
+    bot.send_message(message.chat.id,f"""Name: {contact.title()}
 Phones: {phonebook[contact]["phones"]}
 Place: {phonebook[contact]["place"].title()}""")
-        else:
-            for name, v in phonebook.items():
-                for v1 in v["phones"]:
-                    if v1 == contact:
-                        bot.send_message(message.chat.id, f"""Name: {name.title()}
+
+def look_phone(message):
+    contact = message.text.lower()
+    
+    for name, v in phonebook.items():
+        for v1 in v["phones"]:
+            if v1 == contact:
+                bot.send_message(message.chat.id, f"""Name: {name.title()}
 Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""")
-    except:
-        bot.send_message(message.chat.id, "This contact was not found")
+    
+#     try:
+#         if contact.isalpha():
+#             bot.send_message(message.chat.id,f"""Name: {contact.title()}
+# Phones: {phonebook[contact]["phones"]}
+# Place: {phonebook[contact]["place"].title()}""")
+#         else:
+#             for name, v in phonebook.items():
+#                 for v1 in v["phones"]:
+#                     if v1 == contact:
+#                         bot.send_message(message.chat.id, f"""Name: {name.title()}
+# Phones: {phonebook[name]["phones"]}
+# Place: {phonebook[name]["place"].title()}""")
+#     except:
+#         bot.send_message(message.chat.id, "This contact was not found")
+
 
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
 def get_del_contact(message):
-    bot.send_message(message.chat.id, "Enter the name of the contact")
+    button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    for k, _ in phonebook.items():
+        button.add(f"{k.title()}")
+
+    bot.send_message(message.chat.id, "Enter the name of the contact", reply_markup=button)
     bot.register_next_step_handler(message, choose_data)
 
 def choose_data(message):
@@ -116,9 +160,6 @@ def execute_change(message):
         bot.send_message(message.chat.id, "Which number do you want to delete?", reply_markup=button)
         bot.register_next_step_handler(message, delete_phone)
 
-    else:
-        bot.send_message(message.chat.id, "Invalid option.") 
-
 def delete_phone(message):
     chosen_phone = message.text
     phonebook[change_data.pop()]["phones"].remove(chosen_phone)
@@ -128,7 +169,11 @@ def delete_phone(message):
 # change data
 @bot.message_handler(commands=["change"])
 def choose_contact(message):
-    bot.send_message(message.chat.id, "Enter the name of contact you want to change")
+    button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    for k, _ in phonebook.items():
+        button.add(f"{k.title()}")
+
+    bot.send_message(message.chat.id, "Enter the name of contact you want to change", reply_markup=button)
     bot.register_next_step_handler(message, choose_operation)
 
 def choose_operation(message):
@@ -155,8 +200,6 @@ def perform_change(message):
     elif chosen_option == "place":
         bot.send_message(message.chat.id, "Enter the new place of contact")
         bot.register_next_step_handler(message, replace_place)
-    else:
-        bot.send_message(message.chat.id, "Invalid option. Please choose 'Name', 'Phone', or 'Place'.")
 
 def replace_name(message):
     contact = message.text.lower() # new contact name
