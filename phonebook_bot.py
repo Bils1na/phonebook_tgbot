@@ -66,7 +66,8 @@ def get_name(message):
     button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     name_button = types.KeyboardButton("Names")
     phone_button = types.KeyboardButton("Phones")
-    button.add(name_button, phone_button)
+    search_button = types.KeyboardButton("Search")
+    button.add(name_button, phone_button, search_button)
 
     bot.send_message(message.chat.id, "Which do you want to choose by names or by phone numbers?", reply_markup=button)
     bot.register_next_step_handler(message, look_option)
@@ -81,6 +82,7 @@ def look_option(message):
 
         bot.send_message(message.chat.id, "Which contact do you want to choose?", reply_markup=button)
         bot.register_next_step_handler(message, look_contact)
+
     elif chosen_option == "phones":
         button = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         for _, v in phonebook.items():
@@ -89,6 +91,10 @@ def look_option(message):
 
         bot.send_message(message.chat.id, "Which number do you want to choose?", reply_markup=button)
         bot.register_next_step_handler(message, look_phone)
+
+    elif chosen_option == "search":
+        bot.send_message(message.chat.id, "Enter the name or the phone number")
+        bot.register_next_step_handler(message, search_contact)
 
 def look_contact(message):
     contact = message.text.lower()
@@ -106,6 +112,14 @@ def look_phone(message):
                 bot.send_message(message.chat.id, f"""Name: *{name.title()}*
 Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
+                
+def search_contact(message):
+    contact = message.text.lower()
+    for k, _ in phonebook.items():
+        if contact in k:
+            bot.send_message(message.chat.id,f"""Name: *{k.title()}*
+Phones: {phonebook[k]["phones"]}
+Place: {phonebook[k]["place"].title()}""", parse_mode="Markdown")
     
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
