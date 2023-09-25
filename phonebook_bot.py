@@ -115,11 +115,19 @@ Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
                 
 def search_contact(message):
     contact = message.text.lower()
-    for k, _ in phonebook.items():
-        if contact in k:
-            bot.send_message(message.chat.id,f"""Name: *{k.title()}*
+    if contact.strip().isalpha() or len(contact.split()) > 1:
+        for k, _ in phonebook.items():
+            if contact in k:
+                bot.send_message(message.chat.id,f"""Name: *{k.title()}*
 Phones: {phonebook[k]["phones"]}
 Place: {phonebook[k]["place"].title()}""", parse_mode="Markdown")
+    else:
+        for name, v in phonebook.items():
+            for v1 in v["phones"]:
+                if v1 == contact:
+                    bot.send_message(message.chat.id, f"""Name: *{name.title()}*
+Phones: {phonebook[name]["phones"]}
+Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
     
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
