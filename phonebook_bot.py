@@ -115,12 +115,17 @@ Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
                 
 def search_contact(message):
     contact = message.text.lower()
+    exist = 0
+    
     if contact.strip().isalpha() or len(contact.split()) > 1:
         for k, _ in phonebook.items():
             if contact in k:
-                bot.send_message(message.chat.id,f"""Name: *{k.title()}*
+                 bot.send_message(message.chat.id,f"""Name: *{k.title()}*
 Phones: {phonebook[k]["phones"]}
 Place: {phonebook[k]["place"].title()}""", parse_mode="Markdown")
+                 exist = 1
+        if exist != 1:
+            bot.send_message(message.chat.id, "This contact was not found")
     else:
         for name, v in phonebook.items():
             for v1 in v["phones"]:
@@ -128,7 +133,10 @@ Place: {phonebook[k]["place"].title()}""", parse_mode="Markdown")
                     bot.send_message(message.chat.id, f"""Name: *{name.title()}*
 Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
-    
+                    exist = 1
+        if exist != 1:
+                bot.send_message(message.chat.id, "This contact was not found")  
+
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
 def get_del_contact(message):
