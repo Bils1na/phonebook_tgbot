@@ -56,8 +56,8 @@ def save_contact_data(chat_id): # Save the new contact in phonebook
 # save list of contacts in json file
 @bot.message_handler(commands=["save"])
 def save_contact(message):
-    with open(FILE, "w", encoding="utf-8") as f:
-        f.write(json.dumps(phonebook, ensure_ascii=False))
+    with open(FILE, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(phonebook, ensure_ascii=False))
     bot.send_message(message.chat.id, "Data has saved")
 
 # look contact by name or number
@@ -120,10 +120,10 @@ def search_contact(message):
     if contact.strip().isalpha() or len(contact.split()) > 1:
         for k, _ in phonebook.items():
             if contact in k:
-                 bot.send_message(message.chat.id,f"""Name: *{k.title()}*
+                bot.send_message(message.chat.id,f"""Name: *{k.title()}*
 Phones: {phonebook[k]["phones"]}
 Place: {phonebook[k]["place"].title()}""", parse_mode="Markdown")
-                 exist = 1
+                exist = 1
         if exist != 1:
             bot.send_message(message.chat.id, "This contact was not found")
     else:
@@ -135,7 +135,7 @@ Phones: {phonebook[name]["phones"]}
 Place: {phonebook[name]["place"].title()}""", parse_mode="Markdown")
                     exist = 1
         if exist != 1:
-                bot.send_message(message.chat.id, "This contact was not found")  
+            bot.send_message(message.chat.id, "This contact was not found")  
 
 # delete the contact or phone numbers   
 @bot.message_handler(commands=["delete"])
